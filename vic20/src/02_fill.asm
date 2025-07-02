@@ -1,4 +1,4 @@
-#import "template.asm"
+#import "basic_stub.asm"
 
 //2. **Fill Screen** - Fill the entire screen with a single character (like asterisks)
 //Screen memory: 1E00-1FFF

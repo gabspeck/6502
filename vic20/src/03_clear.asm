@@ -1,4 +1,4 @@
-#import "template.asm"
+#import "basic_stub.asm"
 
 // 3. **Clear Screen** - Clear the screen by filling it with spaces
 

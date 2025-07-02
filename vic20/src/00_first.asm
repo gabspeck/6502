@@ -1,4 +1,4 @@
-#import "template.asm"
+#import "basic_stub.asm"
 
 start:
     lda #$01

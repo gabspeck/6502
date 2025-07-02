@@ -1,4 +1,4 @@
-#import "template.asm"
+#import "basic_stub.asm"
 
 // 4. **Color Change** - Change the border and background colors using VIC registers
 /*

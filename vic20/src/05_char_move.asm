@@ -4,14 +4,20 @@
 .label CHROUT=$FFD2
 .label CHRSET=$9005
 .label RASTER_CNT = $9004
+.label SCREEN_BORDER_COLORS=$900F
 .label SCREEN_RAM_START=$1E00
 .label COLOR_RAM_START=$9600
+.label PLAYER_LO=$01
+.label POS_HI=$02
+.label COLOR_HI=$03
 
+.const BLACK=0
 .const RED=2
+.const WHITE_BG_BLK_BRD=%0001_1000
+.const ROW_LENGTH=22
 .const PLAYER=83
 .const SPACE=32
 .const CLRSCR=$93
-.const SCREEN_RAM_OFFSET=$00E6
 .const KEY_UP=$91
 .const KEY_ENTER=13
 
@@ -19,25 +25,45 @@
 start:
 	jsr clear_scr
 
-	lda #RED
-	sta COLOR_RAM_START+SCREEN_RAM_OFFSET
+	lda #WHITE_BG_BLK_BRD
+	sta SCREEN_BORDER_COLORS
 
+	lda $E6
+	sta PLAYER_LO
+
+	lda $1E 
+	sta POS_HI
+
+	lda $96
+	sta COLOR_HI
+
+	ldy COLOR_HI
+	lda #RED
+	sta (PLAYER_LO),Y
+
+	ldy POS_HI
 	lda #PLAYER
-	sta SCREEN_RAM_START+SCREEN_RAM_OFFSET
+	sta (PLAYER_LO),Y
+
 
 getchr: jsr SCNKEY
 		jsr GETIN
-		cmp #KEY_UP
-		beq moveup
+		// cmp #KEY_UP
+		// beq moveup
 		cmp #KEY_ENTER
 		beq game_over
 		jmp getchr
 
-moveup:	lda #RED
-		sta COLOR_RAM_START+SCREEN_RAM_OFFSET-22
-		lda #PLAYER
-		sta SCREEN_RAM_START+SCREEN_RAM_OFFSET-22
-		jmp getchr
+// moveup:	ldx pos_offset
+// 		lda #SPACE
+//         sta SCREEN_RAM_START,X
+// 		txa 
+//         sec
+// 		sbc #ROW_LENGTH
+// 		tax
+// 		stx pos_offset
+// 		jsr paint_player
+// 		jmp getchr
 
 game_over: 	ldx #0
 
