@@ -8,13 +8,19 @@
 // Key codes
 .const CLRSCR=$93
 
+// Screen codes
+.const HEART=83
+
+//Color codes
+.const RED=$02
+
 // Zero page positions
 .const ZP=$00
-.const POS_PTR=ZP
+.const SCR_PTR=ZP
 .const COLOR_PTR=ZP+2
-.const POS_X=ZP+4
-.const POS_Y=ZP+5
-.const INDEX=ZP+6
+.const SCR_X=ZP+4
+.const SCR_Y=ZP+5
+.const SCR_INDEX=ZP+6
 .const TEMP_1=$FF
 .const TEMP_2=TEMP_1-1
 
@@ -23,10 +29,10 @@ start:
 lda #CLRSCR
 jsr CHROUT
 
-lda #21
-sta POS_X
 lda #11
-sta POS_Y
+sta SCR_X
+lda #11
+sta SCR_Y
 
 jsr draw
 jmp *
@@ -35,58 +41,69 @@ draw:
 	// translate X and Y coordinates to linear index to the screen memory (0-505)
 	jsr xy_to_index
 
+	// initialize high byte of screen memory
 	lda #$1E
-	sta POS_PTR+1
+	sta SCR_PTR+1
 
+	// initialize high byte of color memory
 	lda #$96
 	sta COLOR_PTR+1
 	
-	lda INDEX
-	sta POS_PTR
+	// since the memories start at 00, we can load the low byte of the index to screen 
+	// and color memories directly into the pointer
+	lda SCR_INDEX
+	sta SCR_PTR
 	sta COLOR_PTR
 
-	lda INDEX+1
+	// add the high byte of the index to the screen pointer in case it overflowed to a second byte
+	lda SCR_INDEX+1
 	clc
-	adc POS_PTR+1
-	sta POS_PTR+1
-	
-	lda INDEX+1
-	clc
-	adc COLOR_PTR+1
-	sta COLOR_PTR+1
+	adc SCR_PTR+1
+	sta SCR_PTR+1
 
+	// to get the high byte of the color pointer, we simply add $96-$1E to the high byte of the 
+	// screen pointer
+	clc	
+	adc #$78 // delta between high bytes of screen memory and color memory
+	sta COLOR_PTR+1
+	
+	// even though we store the full address in the pointer, we need the Y register for 
+	// indrect addressing, so we just set it to 0
 	ldy #0
 
-	lda #$02
-	sta (COLOR_PTR),Y
 
-	lda #83
-	sta (POS_PTR),Y
+	// and, finally, load the heart character into the correct screen pointer...
+	lda #HEART
+	sta (SCR_PTR),Y
+
+	// ...and set it's color to red
+	lda #RED
+	sta (COLOR_PTR),Y
 
 	rts
 
 xy_to_index:
 
-	lda POS_Y
+	lda SCR_Y
 	asl // multiply by 2 to get correct index for 16-bit value (0=0,1=2,2=4,3=6,4=8, etc.)
 	tay
 
 	// retrieve and store LOW byte
 	lda y_times_22,Y
-	sta INDEX 
+	sta SCR_INDEX 
 
 	// retrieve and store HIGH byte
 	lda y_times_22+1,Y
-	sta INDEX+1
+	sta SCR_INDEX+1
 
 	// add X to the index
-	lda POS_X
+	lda SCR_X
 	clc 
-	adc INDEX
-	sta INDEX
+	adc SCR_INDEX
+	sta SCR_INDEX
 	lda #00
-	adc INDEX+1
-	sta INDEX+1
+	adc SCR_INDEX+1
+	sta SCR_INDEX+1
 
 	rts
 
