@@ -5,7 +5,10 @@
 .label GETIN=$FFE4
 .label SCNKEY=$FF9F
 
+// Key codes
 .const CLRSCR=$93
+
+// Zero page positions
 .const COLOR_PTR=$00
 .const POS_PTR=$02
 .const POS_X=$04
