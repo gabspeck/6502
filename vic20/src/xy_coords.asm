@@ -22,18 +22,7 @@ start:
 lda #CLRSCR
 jsr CHROUT
 
-lda #$00
-sta COLOR_PTR
-lda #$96
-sta COLOR_PTR+1
-
-
-lda #$00
-sta POS_PTR
-lda #$1E
-sta POS_PTR+1
-
-lda #11
+lda #21
 sta POS_X
 lda #11
 sta POS_Y
@@ -44,27 +33,23 @@ jmp *
 draw:
 	jsr xy_to_index
 
-	lda #0
-	sta COLOR_PTR
-	sta POS_PTR
 	lda #$96
 	sta COLOR_PTR+1
+
 	lda #$1E
 	sta POS_PTR+1
-
+	
 	lda INDEX
-	clc
-	adc COLOR_PTR
 	sta COLOR_PTR
+	sta POS_PTR
+	
 	lda INDEX+1
+	clc
 	adc COLOR_PTR+1
 	sta COLOR_PTR+1
 
-	lda INDEX
-	clc
-	adc POS_PTR
-	sta POS_PTR
 	lda INDEX+1
+	clc
 	adc POS_PTR+1
 	sta POS_PTR+1
 
