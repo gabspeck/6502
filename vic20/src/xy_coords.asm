@@ -5,7 +5,12 @@
 .label GETIN=$FFE4
 .label SCNKEY=$FF9F
 
-// Key codes
+// ASCII codes
+.const SPACE=32
+.const UP=145
+.const DOWN=17
+.const LEFT=157
+.const RIGHT=29
 .const CLRSCR=$93
 
 // Screen codes
@@ -25,22 +30,75 @@
 .const TEMP_2=TEMP_1-1
 
 start:
+	lda #CLRSCR
+	jsr CHROUT
 
-lda #CLRSCR
-jsr CHROUT
+	lda #11
+	sta SCR_X
+	lda #11
+	sta SCR_Y
 
-lda #11
-sta SCR_X
-lda #11
-sta SCR_Y
+main_loop:
+	jsr draw
+	
+	jmp handle_input
+	
+	jmp main_loop
+	
+handle_input:
+	jsr SCNKEY
+	jsr GETIN
+	
+	cmp #UP
+		beq move_up
+	cmp #DOWN
+		beq move_down
+	cmp #LEFT
+		beq move_left
+	cmp #RIGHT
+		beq move_right
+	
+	jmp main_loop
 
-jsr draw
-jmp *
+	move_up:
+		lda SCR_Y
+		cmp #00
+		beq main_loop
+		jsr clear
+		dec SCR_Y
+		jmp main_loop
+	move_down:
+		lda SCR_Y
+		cmp #22
+		beq main_loop
+		jsr clear
+		inc SCR_Y
+		jmp main_loop
+	move_left:
+		lda SCR_X
+		cmp #0
+		beq main_loop
+		jsr clear
+		dec SCR_X
+		jmp main_loop
+	move_right:
+		lda SCR_X
+		cmp #21
+		beq main_loop
+		jsr clear
+		inc SCR_X
+		jmp main_loop
+		
+clear:
+	ldy #0
+	lda #SPACE
+	sta (SCR_PTR),Y 
+	rts
 
 draw:
 	// translate X and Y coordinates to linear index to the screen memory (0-505)
 	jsr xy_to_index
-
+	
 	// initialize high byte of screen memory
 	lda #$1E
 	sta SCR_PTR+1
@@ -106,7 +164,7 @@ xy_to_index:
 	sta SCR_INDEX+1
 
 	rts
-
+	
 y_times_22:
 .for (var y = 0; y < 23; y++) {
 	.word y * 22 
