@@ -9,13 +9,14 @@
 .const CLRSCR=$93
 
 // Zero page positions
-.const POS_PTR=$00
-.const COLOR_PTR=$02
-.const POS_X=$04
-.const POS_Y=$05
-.const INDEX=$06
+.const ZP=$00
+.const POS_PTR=ZP
+.const COLOR_PTR=ZP+2
+.const POS_X=ZP+4
+.const POS_Y=ZP+5
+.const INDEX=ZP+6
 .const TEMP_1=$FF
-.const TEMP_2=$FE
+.const TEMP_2=TEMP_1-1
 
 start:
 
