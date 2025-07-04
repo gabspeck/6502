@@ -9,8 +9,8 @@
 .const CLRSCR=$93
 
 // Zero page positions
-.const COLOR_PTR=$00
-.const POS_PTR=$02
+.const POS_PTR=$00
+.const COLOR_PTR=$02
 .const POS_X=$04
 .const POS_Y=$05
 .const INDEX=$06
@@ -31,27 +31,28 @@ jsr draw
 jmp *
 
 draw:
+	// translate X and Y coordinates to linear index to the screen memory (0-505)
 	jsr xy_to_index
-
-	lda #$96
-	sta COLOR_PTR+1
 
 	lda #$1E
 	sta POS_PTR+1
+
+	lda #$96
+	sta COLOR_PTR+1
 	
 	lda INDEX
-	sta COLOR_PTR
 	sta POS_PTR
-	
-	lda INDEX+1
-	clc
-	adc COLOR_PTR+1
-	sta COLOR_PTR+1
+	sta COLOR_PTR
 
 	lda INDEX+1
 	clc
 	adc POS_PTR+1
 	sta POS_PTR+1
+	
+	lda INDEX+1
+	clc
+	adc COLOR_PTR+1
+	sta COLOR_PTR+1
 
 	ldy #0
 
