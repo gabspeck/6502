@@ -46,7 +46,6 @@ main_loop:
 	jmp main_loop
 	
 handle_input:
-	jsr SCNKEY
 	jsr GETIN
 	
 	cmp #UP
