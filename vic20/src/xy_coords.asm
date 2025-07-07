@@ -1,9 +1,5 @@
 #import "basic_stub.asm"
-
-// KERNAL Routines
-.label CHROUT=$FFD2
-.label GETIN=$FFE4
-.label SCNKEY=$FF9F
+#import "kernal.inc.asm"
 
 // ASCII codes
 .const SPACE=32
@@ -15,6 +11,7 @@
 
 // Screen codes
 .const HEART=83
+.const GOAL=127
 
 //Color codes
 .const RED=$02
@@ -23,8 +20,8 @@
 .const ZP=$00
 .const SCR_PTR=ZP
 .const COLOR_PTR=ZP+2
-.const SCR_X=ZP+4
-.const SCR_Y=ZP+5
+.const PLAYER_X=ZP+4
+.const PLAYER_Y=ZP+5
 .const SCR_INDEX=ZP+6
 .const TEMP_1=$FF
 .const TEMP_2=TEMP_1-1
@@ -34,9 +31,9 @@ start:
 	jsr CHROUT
 
 	lda #11
-	sta SCR_X
+	sta PLAYER_X
 	lda #11
-	sta SCR_Y
+	sta PLAYER_Y
 
 main_loop:
 	jsr draw
@@ -60,32 +57,32 @@ handle_input:
 	jmp main_loop
 
 	move_up:
-		lda SCR_Y
+		lda PLAYER_Y
 		cmp #00
 		beq main_loop
 		jsr clear
-		dec SCR_Y
+		dec PLAYER_Y
 		jmp main_loop
 	move_down:
-		lda SCR_Y
+		lda PLAYER_Y
 		cmp #22
 		beq main_loop
 		jsr clear
-		inc SCR_Y
+		inc PLAYER_Y
 		jmp main_loop
 	move_left:
-		lda SCR_X
+		lda PLAYER_X
 		cmp #0
 		beq main_loop
 		jsr clear
-		dec SCR_X
+		dec PLAYER_X
 		jmp main_loop
 	move_right:
-		lda SCR_X
+		lda PLAYER_X
 		cmp #21
 		beq main_loop
 		jsr clear
-		inc SCR_X
+		inc PLAYER_X
 		jmp main_loop
 		
 clear:
@@ -141,7 +138,7 @@ draw:
 
 xy_to_index:
 
-	lda SCR_Y
+	lda PLAYER_Y
 	asl // multiply by 2 to get correct index for 16-bit value (0=0,1=2,2=4,3=6,4=8, etc.)
 	tay
 
@@ -154,7 +151,7 @@ xy_to_index:
 	sta SCR_INDEX+1
 
 	// add X to the index
-	lda SCR_X
+	lda PLAYER_X
 	clc 
 	adc SCR_INDEX
 	sta SCR_INDEX
