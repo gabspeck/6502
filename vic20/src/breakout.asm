@@ -29,7 +29,7 @@
 .const BORDER_LEFT=66
 .const BORDER_RIGHT=72
 .const BALL_FILLED=81
-.const FRAMES_BETWEEN_UPDATES=3
+.const FRAMES_BETWEEN_UPDATES=2
 
 // Flags
 .const flagMask=%0000_0001
@@ -54,9 +54,10 @@ y_times_22:
 paddleOffset: .byte 0
 ballX: .byte 11
 ballY: .byte 11
+//TODO: remove these velocity vars and change the countdown instead to control ball speed
 velocityX: .byte 1
 velocityY: .byte 1
-ballUpdateCountdown: .byte 3
+ballUpdateCountdown: .byte FRAMES_BETWEEN_UPDATES
 flags: .byte 0
 
 start:
