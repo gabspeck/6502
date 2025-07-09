@@ -1,4 +1,11 @@
-// #import "basic_stub.asm"
+// Safe ZP: FB-FE (8 bytes)
+*= $FB virtual
+.zp {
+	screenPointer: .word 0 //$FBFC
+	prevScreenPointer: .word 0 //$FDFE
+}
+
+#import "basic_stub.asm"
 #import "kernal.inc.asm"
 
 .const SCR_COLOR = $0900F
@@ -33,16 +40,17 @@
 // Numeric constants
 .const paddleWidth=2
 
-// Safe ZP: FB-FE (8 bytes)
-*= $FB virtual
-.zp {
-	screenPointer: .word 0 //$FBFC
-	prevScreenPointer: .word 0 //$FDFE
-}
 
 // Misc. labels
 .label PaddleRow = $1E00 + 22*21
- 
+
+// VARIABLES
+// Cache Y multiplication for X/Y to screen pointer conversion
+y_times_22:
+.for (var y = 0; y < 23; y++) {
+	.word y * 22 
+}
+
 paddleOffset: .byte 0
 ballX: .byte 11
 ballY: .byte 11
@@ -51,27 +59,10 @@ velocityY: .byte 1
 ballUpdateCountdown: .byte 3
 flags: .byte 0
 
-#import "basic_stub.asm"
-
 start:
 
 	lda #CLRSCR
 	jsr CHROUT
-
-	lda #FRAMES_BETWEEN_UPDATES
-	sta ballUpdateCountdown
-
-	lda #0
-	sta paddleOffset
-	sta flags
-
-	lda #1
-	sta velocityX
-	sta velocityY
-
-	lda #11
-	sta ballX
-	sta ballY
 
 	lda #%0000_1001
 	sta SCR_COLOR
@@ -280,7 +271,7 @@ DrawPaddle: {
 
 }
 
-XYCoordsToScreenPointer:
+XYCoordsToScreenPointer: {
 
 	lda screenPointer
 	sta prevScreenPointer
@@ -316,8 +307,4 @@ XYCoordsToScreenPointer:
 	adc screenPointer+1
 	sta screenPointer+1
 	rts
-	
-y_times_22:
-.for (var y = 0; y < 23; y++) {
-	.word y * 22 
 }
