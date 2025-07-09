@@ -1,4 +1,4 @@
-#import "basic_stub.asm"
+// #import "basic_stub.asm"
 #import "kernal.inc.asm"
 
 .const SCR_COLOR = $0900F
@@ -28,31 +28,53 @@
 .const flagMask=%0000_0001
 .const FLAG_PAUSED=flagMask
 .const FLAG_X_VELOCITY_SIGN=flagMask<<1
-.const FLAG_Y_VELOCITY_SIGN=flagMask<<2
-
-.const PaddleRow = $1E00 + 22 * 21
-
-// ZP positions
-.var ZP=$00
-.const paddleOffset=ZP++
-.const screenPointer=ZP++
-
-ballX: .byte 11
-ballY: .byte 11
-velocityX: .byte 0
-velocityY: .byte 1
-framesToUpdateBall: .byte FRAMES_BETWEEN_UPDATES
-flags: .byte 0
+.const FLAG_Y_VELOCITY_NEG=flagMask<<2
 
 // Numeric constants
 .const paddleWidth=2
 
+// Safe ZP: FB-FE (8 bytes)
+*= $FB virtual
+.zp {
+	screenPointer: .word 0 //$FBFC
+	prevScreenPointer: .word 0 //$FDFE
+}
+
+// Misc. labels
+.label PaddleRow = $1E00 + 22*21
+ 
+paddleOffset: .byte 0
+ballX: .byte 11
+ballY: .byte 11
+velocityX: .byte 1
+velocityY: .byte 1
+ballUpdateCountdown: .byte 3
+flags: .byte 0
+
+#import "basic_stub.asm"
+
 start:
-	lda #%0000_1001
-	sta SCR_COLOR
+
+	lda #CLRSCR
+	jsr CHROUT
+
+	lda #FRAMES_BETWEEN_UPDATES
+	sta ballUpdateCountdown
 
 	lda #0
 	sta paddleOffset
+	sta flags
+
+	lda #1
+	sta velocityX
+	sta velocityY
+
+	lda #11
+	sta ballX
+	sta ballY
+
+	lda #%0000_1001
+	sta SCR_COLOR
 
 	jsr SetColors
 
@@ -61,37 +83,30 @@ start:
 MainLoop: {
 
 	jsr WaitVBlank
-	dec framesToUpdateBall
 
 	jsr HandleInput
 
-	lda flags
-	and #FLAG_PAUSED
+	lda #FLAG_PAUSED
+	bit flags
 	bne MainLoop
 
-	jsr ClearScreen
+	jsr ClearPaddleArea
 	jsr DrawPaddle
-	jsr DrawBall
 	jsr UpdateBallState
+	jsr DrawBall
+
 	jmp MainLoop
 }
 
-ClearScreen: {
+ClearPaddleArea: {
 	lda #SPACE
-	ldx #0
+	ldy #0
 
-	upper:
-		sta $1E00,X
-		inx
-		bne upper
-	
-	lower:
-		sta $1F00,X
-		inx 
-		bne lower
-	
+	loop:
+		sta PaddleRow,Y
+		iny
+		bne loop
 	rts
-	
 }
 
 WaitVBlank:{
@@ -110,8 +125,8 @@ HandleInput: {
 	jsr GETIN
 	tax
 
-	lda flags
-	and #FLAG_PAUSED
+	lda #FLAG_PAUSED
+	bit flags
 	bne pauseCheck
 
 	txa
@@ -128,7 +143,6 @@ HandleInput: {
 
 	moveLeft:
 		lda paddleOffset
-		cmp #00
 		beq return
 		dec paddleOffset
 		jmp return
@@ -149,52 +163,58 @@ HandleInput: {
 
 UpdateBallState: {
 
-	lda framesToUpdateBall
-	bne return
-	
-	lda #FRAMES_BETWEEN_UPDATES
-	sta framesToUpdateBall
+	// decrease frame counter
+	dec ballUpdateCountdown
 
-	lda flags
-	and #FLAG_Y_VELOCITY_SIGN
-	bne goUp
+	// is it zero yet?
+	lda ballUpdateCountdown
+	bne return // no? return
+	
+	// alright, it's time to move the ball
+	
+	// reset the countdown timer
+	lda #FRAMES_BETWEEN_UPDATES
+	sta ballUpdateCountdown
+
+	// is the Y velocity negative?
+	lda #FLAG_Y_VELOCITY_NEG
+	bit flags
+	bne goUp // if so, move the ball upward
 
 	goDown:
 		clc
 		lda ballY
 		adc velocityY
 
+		// ballY <= 20?
 		cmp #20
-		bcc storePointer // ballY <= 20?
+		bcc storeBallY // yes: no need to flip the sign, just update the pointer
 
+		// this is as low as it can go, so reverse vertical direction
 		lda flags
-		ora #FLAG_Y_VELOCITY_SIGN
+		ora #FLAG_Y_VELOCITY_NEG
 		sta flags
 		lda #20
-		jmp storePointer
+		jmp storeBallY
 	
 	goUp:
 		sec
 		lda ballY
 		sbc velocityY
 
-		bcs storePointer
+		bcs storeBallY // carry is set, subtraction did not underflow, so we are within bounds
 
 		lda flags
-		and #~FLAG_Y_VELOCITY_SIGN
+		and #~FLAG_Y_VELOCITY_NEG
 		sta flags
 		lda #0
 	
-	storePointer:
-	sta ballY
+	storeBallY: tay
 
+	sty ballY
 	ldx ballX
-	ldy ballY
 
-	jsr xy_to_index
-
-	stx screenPointer
-	sty screenPointer+1
+	jsr XYCoordsToScreenPointer
 
 	return: rts
 }
@@ -202,26 +222,24 @@ UpdateBallState: {
 SetColors: {
 	lda #01
 	ldy 0
-	loop:
-		sta PaddleRow+$7800,Y
+	upper:
+		sta $9600
 		iny
-		cpy #(22*2)+1
-		bne loop
+		bne upper
+	lower:
+		sta $9700
+		iny
+		bne lower
 	rts
 }
 
 DrawBall: {
+	ldy #0
+
+	lda #SPACE
+	sta (prevScreenPointer),Y
 
 	lda #BALL_FILLED
-	ldy #0
-	sta (screenPointer),Y
-
-	clc
-	lda screenPointer+1
-	adc #$78
-	sta screenPointer+1,Y
-
-	lda #01
 	sta (screenPointer),Y
 
 	rts
@@ -243,6 +261,7 @@ DrawPaddle: {
 	sta PaddleRow,Y
 
 	tya
+	clc
 	adc #22-paddleWidth-1
 	tay
 
@@ -261,7 +280,13 @@ DrawPaddle: {
 
 }
 
-xy_to_index:
+XYCoordsToScreenPointer:
+
+	lda screenPointer
+	sta prevScreenPointer
+
+	lda screenPointer+1
+	sta prevScreenPointer+1
 
 	lda #$00
 	sta screenPointer
@@ -282,15 +307,14 @@ xy_to_index:
 	adc screenPointer+1
 	sta screenPointer+1
 
-	// add X to the index
+	// add X to the index and update the pointer
 	txa
 	clc 
 	adc screenPointer
-	tax
+	sta screenPointer
 	lda #00
 	adc screenPointer+1
-	tay
-
+	sta screenPointer+1
 	rts
 	
 y_times_22:
