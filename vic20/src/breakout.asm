@@ -141,7 +141,7 @@ HandleInput: {
 UpdateBallState: {
 	ldx ballX
 	ldy ballY
-	
+
 	jsr xy_to_index
 
 	stx screenPointer
@@ -201,10 +201,10 @@ DrawPaddle: {
 	sta PaddleRow,Y
 	iny
 	lda #BORDER_BOTTOM
-	sta PaddleRow,Y
-	iny
-	sta PaddleRow,Y
-	iny
+	.for (var i = 0; i < paddleWidth; i++) {
+		sta PaddleRow,Y
+		iny
+	}
 	lda #ROUNDED_BORDER_BOTTOM_RIGHT
 	sta PaddleRow,Y
 
