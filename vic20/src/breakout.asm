@@ -22,6 +22,7 @@
 .const BORDER_LEFT=66
 .const BORDER_RIGHT=72
 .const BALL_FILLED=81
+.const FRAMES_BETWEEN_UPDATES=3
 
 // Flags
 .const flagMask=%0000_0001
@@ -39,7 +40,8 @@
 ballX: .byte 11
 ballY: .byte 11
 velocityX: .byte 0
-velocityY: .byte 0
+velocityY: .byte 1
+framesToUpdateBall: .byte FRAMES_BETWEEN_UPDATES
 flags: .byte 0
 
 // Numeric constants
@@ -48,9 +50,6 @@ flags: .byte 0
 start:
 	lda #%0000_1001
 	sta SCR_COLOR
-
-	lda #1
-	sta velocityY
 
 	lda #0
 	sta paddleOffset
@@ -62,6 +61,8 @@ start:
 MainLoop: {
 
 	jsr WaitVBlank
+	dec framesToUpdateBall
+
 	jsr HandleInput
 
 	lda flags
@@ -147,6 +148,13 @@ HandleInput: {
 
 
 UpdateBallState: {
+
+	lda framesToUpdateBall
+	bne return
+	
+	lda #FRAMES_BETWEEN_UPDATES
+	sta framesToUpdateBall
+
 	lda flags
 	and #FLAG_Y_VELOCITY_SIGN
 	bne goUp
@@ -188,7 +196,7 @@ UpdateBallState: {
 	stx screenPointer
 	sty screenPointer+1
 
-	rts
+	return: rts
 }
 
 SetColors: {
