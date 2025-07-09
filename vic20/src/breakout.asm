@@ -24,7 +24,10 @@
 .const BALL_FILLED=81
 
 // Flags
-.const FLAG_PAUSED=%0000_0001
+.const flagMask=%0000_0001
+.const FLAG_PAUSED=flagMask
+.const FLAG_X_VELOCITY_SIGN=flagMask<<1
+.const FLAG_Y_VELOCITY_SIGN=flagMask<<2
 
 .const PaddleRow = $1E00 + 22 * 21
 
@@ -35,6 +38,8 @@
 
 ballX: .byte 11
 ballY: .byte 11
+velocityX: .byte 0
+velocityY: .byte 0
 flags: .byte 0
 
 // Numeric constants
@@ -43,6 +48,9 @@ flags: .byte 0
 start:
 	lda #%0000_1001
 	sta SCR_COLOR
+
+	lda #1
+	sta velocityY
 
 	lda #0
 	sta paddleOffset
@@ -139,6 +147,39 @@ HandleInput: {
 
 
 UpdateBallState: {
+	lda flags
+	and #FLAG_Y_VELOCITY_SIGN
+	bne goUp
+
+	goDown:
+		clc
+		lda ballY
+		adc velocityY
+
+		cmp #20
+		bcc storePointer // ballY <= 20?
+
+		lda flags
+		ora #FLAG_Y_VELOCITY_SIGN
+		sta flags
+		lda #20
+		jmp storePointer
+	
+	goUp:
+		sec
+		lda ballY
+		sbc velocityY
+
+		bcs storePointer
+
+		lda flags
+		and #~FLAG_Y_VELOCITY_SIGN
+		sta flags
+		lda #0
+	
+	storePointer:
+	sta ballY
+
 	ldx ballX
 	ldy ballY
 
