@@ -171,30 +171,30 @@ UpdateBallState: {
 	bne goUp // if so, move the ball upward
 
 	goDown:
-		clc
+		inc ballY
 		lda ballY
-		adc #1
 
-		// ballY <= 20?
-		cmp #20
+		// ballY < 20?
+		cmp #21
 		bcc storeBallY // yes: no need to flip the sign, just update the pointer
 
 		// this is as low as it can go, so reverse vertical direction
 		lda flags
-		ora #FLAG_Y_VELOCITY_NEG
+		eor #FLAG_Y_VELOCITY_NEG
 		sta flags
+
+		// clamp value to stay within bounds
 		lda #20
 		jmp storeBallY
 	
 	goUp:
-		sec
+		dec ballY
 		lda ballY
-		sbc #1
 
-		bcs storeBallY // carry is set, subtraction did not underflow, so we are within bounds
+		bne storeBallY // A is not yet 0, subtraction did not underflow, so we are within bounds
 
 		lda flags
-		and #~FLAG_Y_VELOCITY_NEG
+		eor #FLAG_Y_VELOCITY_NEG
 		sta flags
 		lda #0
 	
