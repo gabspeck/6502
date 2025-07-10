@@ -29,7 +29,6 @@
 .const BORDER_LEFT=66
 .const BORDER_RIGHT=72
 .const BALL_FILLED=81
-.const FRAMES_BETWEEN_UPDATES=2
 
 // Flags
 .const flagMask=%0000_0001
@@ -38,8 +37,8 @@
 .const FLAG_Y_VELOCITY_NEG=flagMask<<2
 
 // Numeric constants
-.const paddleWidth=2
-
+.const PADDLE_WIDTH=2
+.const INITIAL_UPDATE_INTERVAL=3
 
 // Misc. labels
 .label PaddleRow = $1E00 + 22*21
@@ -54,10 +53,8 @@ y_times_22:
 paddleOffset: .byte 0
 ballX: .byte 11
 ballY: .byte 11
-//TODO: remove these velocity vars and change the countdown instead to control ball speed
-velocityX: .byte 1
-velocityY: .byte 1
-ballUpdateCountdown: .byte FRAMES_BETWEEN_UPDATES
+ballUpdateInterval: .byte INITIAL_UPDATE_INTERVAL
+ballUpdateCountdown: .byte INITIAL_UPDATE_INTERVAL
 flags: .byte 0
 
 start:
@@ -140,7 +137,7 @@ HandleInput: {
 		jmp return
 	moveRight:
 		lda paddleOffset
-		cmp #22-paddleWidth-2
+		cmp #22-PADDLE_WIDTH-2
 		beq return
 		inc paddleOffset
 		jmp return
@@ -165,7 +162,7 @@ UpdateBallState: {
 	// alright, it's time to move the ball
 	
 	// reset the countdown timer
-	lda #FRAMES_BETWEEN_UPDATES
+	lda ballUpdateInterval
 	sta ballUpdateCountdown
 
 	// is the Y velocity negative?
@@ -176,7 +173,7 @@ UpdateBallState: {
 	goDown:
 		clc
 		lda ballY
-		adc velocityY
+		adc #1
 
 		// ballY <= 20?
 		cmp #20
@@ -192,7 +189,7 @@ UpdateBallState: {
 	goUp:
 		sec
 		lda ballY
-		sbc velocityY
+		sbc #1
 
 		bcs storeBallY // carry is set, subtraction did not underflow, so we are within bounds
 
@@ -245,7 +242,7 @@ DrawPaddle: {
 	sta PaddleRow,Y
 	iny
 	lda #BORDER_TOP
-	.for (var i = 0; i < paddleWidth; i++) {
+	.for (var i = 0; i < PADDLE_WIDTH; i++) {
 		sta PaddleRow,Y
 		iny
 	}
@@ -254,14 +251,14 @@ DrawPaddle: {
 
 	tya
 	clc
-	adc #22-paddleWidth-1
+	adc #22-PADDLE_WIDTH-1
 	tay
 
 	lda #ROUNDED_BORDER_BOTTOM_LEFT
 	sta PaddleRow,Y
 	iny
 	lda #BORDER_BOTTOM
-	.for (var i = 0; i < paddleWidth; i++) {
+	.for (var i = 0; i < PADDLE_WIDTH; i++) {
 		sta PaddleRow,Y
 		iny
 	}
