@@ -156,7 +156,6 @@ UpdateBallState: {
 	dec ballUpdateCountdown
 
 	// is it zero yet?
-	lda ballUpdateCountdown
 	bne return // no? return
 	
 	// alright, it's time to move the ball
@@ -176,30 +175,25 @@ UpdateBallState: {
 
 		// ballY < 20?
 		cmp #21
+		tay
 		bcc storeBallY // yes: no need to flip the sign, just update the pointer
 
 		// this is as low as it can go, so reverse vertical direction
-		lda flags
-		eor #FLAG_Y_VELOCITY_NEG
-		sta flags
-
-		// clamp value to stay within bounds
-		lda #20
-		jmp storeBallY
+		jmp flipYVelocity
 	
 	goUp:
 		dec ballY
 		lda ballY
 
+		tay
 		bne storeBallY // A is not yet 0, subtraction did not underflow, so we are within bounds
-
+	
+	flipYVelocity:
 		lda flags
 		eor #FLAG_Y_VELOCITY_NEG
 		sta flags
-		lda #0
-	
-	storeBallY: tay
 
+	storeBallY: 
 	sty ballY
 	ldx ballX
 
