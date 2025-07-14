@@ -167,39 +167,43 @@ UpdateBallState: {
 	// is the Y velocity negative?
 	lda #FLAG_Y_VELOCITY_NEG
 	bit flags
-	bne goUp // if so, move the ball upward
+	bne decreaseY
 
-	goDown:
+	lda ballY
+	cmp #22
+	beq resetBall
+	bcc increaseY
+
+	resetBall:
+		lda #0
+		sta ballY
+
+	increaseY:
 		inc ballY
 		lda ballY
-
-		// ballY < 20?
 		cmp #21
-		tay
-		bcc storeBallY // yes: no need to flip the sign, just update the pointer
+		beq checkPaddleCollision
+		bne updatePointer
 
-		// this is as low as it can go, so reverse vertical direction
-		jmp flipYVelocity
-	
-	goUp:
+	decreaseY: 
 		dec ballY
-		lda ballY
+		bne updatePointer
+		jmp revert
 
-		tay
-		bne storeBallY // A is not yet 0, subtraction did not underflow, so we are within bounds
-	
-	flipYVelocity:
+	checkPaddleCollision:
+		lda paddleOffset
+		cmp ballX
+		bne updatePointer
+	revert:
 		lda flags
 		eor #FLAG_Y_VELOCITY_NEG
 		sta flags
 
-	storeBallY: 
-	sty ballY
-	ldx ballX
-
+	updatePointer:
 	jsr XYCoordsToScreenPointer
 
 	return: rts
+
 }
 
 SetColors: {
@@ -277,7 +281,7 @@ XYCoordsToScreenPointer: {
 	lda #$1E
 	sta screenPointer+1
 
-	tya
+	lda ballY
 	asl // multiply by 2 to get correct index for 16-bit value (0=0,1=2,2=4,3=6,4=8, etc.)
 	tay
 
@@ -291,7 +295,7 @@ XYCoordsToScreenPointer: {
 	sta screenPointer+1
 
 	// add X to the index and update the pointer
-	txa
+	lda ballX
 	clc 
 	adc screenPointer
 	sta screenPointer
