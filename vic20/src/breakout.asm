@@ -50,7 +50,7 @@ y_times_22:
 	.word y * 22 
 }
 
-paddleOffset: .byte 0
+paddleX: .byte 0
 ballX: .byte 11
 ballY: .byte 11
 ballUpdateInterval: .byte INITIAL_UPDATE_INTERVAL
@@ -131,15 +131,15 @@ HandleInput: {
 	rts
 
 	moveLeft:
-		lda paddleOffset
+		lda paddleX
 		beq return
-		dec paddleOffset
+		dec paddleX
 		jmp return
 	moveRight:
-		lda paddleOffset
+		lda paddleX
 		cmp #22-PADDLE_WIDTH-2
 		beq return
-		inc paddleOffset
+		inc paddleX
 		jmp return
 	togglePause:
 		lda flags
@@ -191,9 +191,13 @@ UpdateBallState: {
 		jmp revert
 
 	checkPaddleCollision:
-		lda paddleOffset
-		cmp ballX
-		bne updatePointer
+		lda ballX
+		sec
+		sbc paddleX
+		bcc updatePointer // subtraction underflow:  ballX-paddleX < 0
+
+		cmp #PADDLE_WIDTH+2
+		bcs updatePointer
 	revert:
 		lda flags
 		eor #FLAG_Y_VELOCITY_NEG
@@ -234,7 +238,7 @@ DrawBall: {
 
 DrawPaddle: {
 
-	ldy paddleOffset
+	ldy paddleX
 
 	lda #ROUNDED_BORDER_TOP_LEFT
 	sta PaddleRow,Y
