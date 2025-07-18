@@ -1,5 +1,6 @@
 // Safe ZP: FB-FE (8 bytes)
 *= $FB virtual
+// .watch screenPointer,screenPointer+1,"store"
 .zp {
 	screenPointer: .word 0 //$FBFC
 	prevScreenPointer: .word 0 //$FDFE
@@ -33,7 +34,7 @@
 // Flags
 .const flagMask=%0000_0001
 .const FLAG_PAUSED=flagMask
-.const FLAG_X_VELOCITY_SIGN=flagMask<<1
+.const FLAG_X_VELOCITY_NEG=flagMask<<1
 .const FLAG_Y_VELOCITY_NEG=flagMask<<2
 
 // Numeric constants
@@ -53,6 +54,7 @@ y_times_22:
 paddleX: .byte 0
 ballX: .byte 11
 ballY: .byte 11
+ballXVelocity: .byte 0
 ballUpdateInterval: .byte INITIAL_UPDATE_INTERVAL
 ballUpdateCountdown: .byte INITIAL_UPDATE_INTERVAL
 flags: .byte 0
@@ -164,50 +166,113 @@ UpdateBallState: {
 	lda ballUpdateInterval
 	sta ballUpdateCountdown
 
-	// is the Y velocity negative?
-	lda #FLAG_Y_VELOCITY_NEG
-	bit flags
-	bne decreaseY
-
-	lda ballY
-	cmp #22
-	beq resetBall
-	bcc increaseY
-
-	resetBall:
-		lda #0
-		sta ballY
-
-	increaseY:
-		inc ballY
-		lda ballY
-		cmp #21
-		beq checkPaddleCollision
-		bne updatePointer
-
-	decreaseY: 
-		dec ballY
-		bne updatePointer
-		jmp revert
-
-	checkPaddleCollision:
-		lda ballX
-		sec
-		sbc paddleX
-		bcc updatePointer // subtraction underflow:  ballX-paddleX < 0
-
-		cmp #PADDLE_WIDTH+2
-		bcs updatePointer
-	revert:
-		lda flags
-		eor #FLAG_Y_VELOCITY_NEG
-		sta flags
-
-	updatePointer:
+	jsr CheckYCollision
+	jsr UpdateBallX
+	jsr UpdateBallY
 	jsr XYCoordsToScreenPointer
 
-	return: rts
+	return:
+		rts
 
+}
+
+CheckYCollision: {
+	lda ballY
+	cmp #0
+	beq invert
+
+	cmp #21
+	bne return
+
+	lda ballX
+	sec
+	sbc paddleX 
+	cmp #0
+	beq leftXVel2
+	cmp #1
+	beq leftXVel1
+	cmp #2
+	beq rightXVel1
+	cmp #3
+	beq rightXVel2
+	jmp return
+
+	leftXVel2:
+		ldx #2
+		jmp leftXVel
+	leftXVel1:
+		ldx #1
+	leftXVel:
+		lda flags
+		ora #FLAG_X_VELOCITY_NEG
+		sta flags
+		stx ballXVelocity
+		jmp return
+
+	rightXVel1:
+		ldx #1
+		jmp rightXVel
+	rightXVel2:
+		ldx #2
+	rightXVel:
+		lda flags
+		and #~FLAG_X_VELOCITY_NEG
+		sta flags
+		stx ballXVelocity
+		jmp return
+
+	invert:
+		lda flags
+		eor #FLAG_X_VELOCITY_NEG+FLAG_Y_VELOCITY_NEG
+		sta flags
+
+	return: rts
+}
+
+UpdateBallX: {
+	lda #FLAG_X_VELOCITY_NEG
+	bit flags
+	beq goRight
+
+	goLeft:
+		lda ballX
+		sec
+		sbc ballXVelocity
+		jmp return
+	goRight:
+		lda ballX
+		clc
+		adc ballXVelocity
+
+	return: 
+		sta ballX
+		rts
+}
+
+UpdateBallY:{
+	lda #FLAG_Y_VELOCITY_NEG
+	bit flags
+	beq goDown
+
+	goUp:
+		.break "if @cpu:.ballY==$0"
+		dec ballY
+		jmp return
+	goDown:
+		lda ballY
+		cmp #22
+		beq wrapAround
+		inc ballY
+		jmp return
+		wrapAround:
+			lda flags
+			eor #FLAG_Y_VELOCITY_NEG
+			sta flags
+			lda #0
+			sta ballY
+
+	return: 
+		rts
 }
 
 SetColors: {
