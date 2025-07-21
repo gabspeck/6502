@@ -168,11 +168,30 @@ UpdateBallState: {
 
 	jsr CheckYCollision
 	jsr UpdateBallX
+	jsr CheckXCollision
 	jsr UpdateBallY
 	jsr XYCoordsToScreenPointer
 
 	return:
 		rts
+
+}
+
+CheckXCollision: {
+	lda ballX
+
+	beq invert
+	cmp #21
+	bcs invert
+
+	jmp return
+
+	invert:
+		lda flags
+		eor #FLAG_X_VELOCITY_NEG
+		sta flags
+
+	return: rts
 
 }
 
@@ -207,7 +226,7 @@ CheckYCollision: {
 		ora #FLAG_X_VELOCITY_NEG
 		sta flags
 		stx ballXVelocity
-		jmp return
+		jmp invert
 
 	rightXVel1:
 		ldx #1
@@ -219,11 +238,10 @@ CheckYCollision: {
 		and #~FLAG_X_VELOCITY_NEG
 		sta flags
 		stx ballXVelocity
-		jmp return
 
 	invert:
 		lda flags
-		eor #FLAG_X_VELOCITY_NEG+FLAG_Y_VELOCITY_NEG
+		eor #FLAG_Y_VELOCITY_NEG
 		sta flags
 
 	return: rts
@@ -255,7 +273,6 @@ UpdateBallY:{
 	beq goDown
 
 	goUp:
-		.break "if @cpu:.ballY==$0"
 		dec ballY
 		jmp return
 	goDown:

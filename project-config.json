@@ -1,0 +1,13 @@
+{
+    "name": "6502",
+    "description": "Project 6502",
+    "toolkit": "kick",
+    "sources": [
+        "vic20/src/breakout.asm"
+    ],
+    "build": "debug",
+    "definitions": [],
+    "includes": [],
+    "args": [],
+    "compiler": ""
+}
