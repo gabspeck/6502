@@ -66,9 +66,25 @@ start:
 	lda #%0000_1001
 	sta SCR_COLOR
 
-	jsr SetColors
+	jsr DrawBricks
 
 	jmp MainLoop
+
+DrawBricks: {
+	
+	.for (var i=0;i<6;i++) {
+	drawRow:
+		lda #32+128
+		sta $1E00,Y
+		lda #02+i
+		sta $9600,Y
+		iny
+		cpy #22+i*22
+		bne drawRow
+	}
+	rts
+
+}
 
 MainLoop: {
 
@@ -119,14 +135,12 @@ HandleInput: {
 	bit flags
 	bne pauseCheck
 
-	txa
-	cmp #LEFT
+	cpx #LEFT
 	beq moveLeft
-	cmp #RIGHT
+	cpx #RIGHT
 	beq moveRight
 	pauseCheck:
-	txa
-	cmp #ENTER
+	cpx #ENTER
 	beq togglePause
 
 	rts
@@ -272,20 +286,6 @@ UpdateBallY:{
 
 	return: 
 		rts
-}
-
-SetColors: {
-	lda #01
-	ldy 0
-	upper:
-		sta $9600
-		iny
-		bne upper
-	lower:
-		sta $9700
-		iny
-		bne lower
-	rts
 }
 
 DrawBall: {
