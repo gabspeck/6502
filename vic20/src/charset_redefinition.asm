@@ -30,6 +30,17 @@ start:
 	ora #%0000_1111
 	sta $9005
 
+	// print 64 characters (2 pages that CopyCharset copied from ROM)
+	ldx #0
+	loop:
+		txa
+		sta $1E00,X
+		lda #0
+		sta $9600,X
+		inx
+		cpx #63
+		bne loop
+
 	jmp *
 
 CopyCharset: {
@@ -39,7 +50,7 @@ CopyCharset: {
 	ldy #0
 	lda #$00
 	sta srcPtr
-	lda #$80
+	lda #$88
 	sta srcPtr+1
 	lda #$00
 	sta dstPtr
@@ -58,4 +69,3 @@ CopyCharset: {
 			
 	rts
 }
-
