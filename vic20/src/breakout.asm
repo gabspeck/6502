@@ -51,9 +51,9 @@ y_times_22:
 	.word y * 22 
 }
 
-paddleX: .byte 0
-ballX: .byte 11
-ballY: .byte 11
+paddleX: .byte 10
+ballX: .word 11
+ballY: .word 11
 ballUpdateInterval: .byte INITIAL_UPDATE_INTERVAL
 ballUpdateCountdown: .byte INITIAL_UPDATE_INTERVAL
 flags: .byte 0
@@ -67,6 +67,10 @@ start:
 	sta SCR_COLOR
 
 	jsr DrawBricks
+
+	lda $9124
+	and #FLAG_X_VELOCITY_NEG
+	sta flags
 
 	jmp MainLoop
 
