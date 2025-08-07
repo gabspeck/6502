@@ -57,6 +57,7 @@ ballY: .word 11
 ballUpdateInterval: .byte INITIAL_UPDATE_INTERVAL
 ballUpdateCountdown: .byte INITIAL_UPDATE_INTERVAL
 flags: .byte 0
+ballAngle: .byte 1
 
 start:
 
@@ -224,21 +225,36 @@ CheckYCollision: {
 	sec
 	sbc paddleX 
 	cmp #0
-	beq leftAngle
+	beq leftAngle2
 	cmp #1
-	beq leftAngle
+	beq leftAngle1
 	cmp #2
-	beq rightAngle
+	beq rightAngle1
 	cmp #3
-	beq rightAngle
+	beq rightAngle2
 	jmp return
 
+	leftAngle2:
+		lda #2
+		sta ballAngle
+		jmp leftAngle
+	leftAngle1:
+		lda #1
+		sta ballAngle
 	leftAngle:
 		lda flags
 		ora #FLAG_X_VELOCITY_NEG
 		sta flags
 		jmp invert
 
+	rightAngle1:
+		lda #1
+		sta ballAngle
+		jmp rightAngle
+	rightAngle2:
+		lda #2
+		sta ballAngle
+		jmp rightAngle
 	rightAngle:
 		lda flags
 		and #~FLAG_X_VELOCITY_NEG
@@ -258,12 +274,17 @@ UpdateBallX: {
 	beq goRight
 
 	goLeft:
-		dec ballX
+		lda ballX
+		sec
+		sbc ballAngle
 		jmp return
 	goRight:
-		inc ballX
+		lda ballX
+		clc
+		adc ballAngle
 
 	return: 
+		sta ballX
 		rts
 }
 
