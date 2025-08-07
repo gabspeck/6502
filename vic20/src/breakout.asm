@@ -208,6 +208,8 @@ CheckXCollision: {
 		lda flags
 		eor #FLAG_X_VELOCITY_NEG
 		sta flags
+		lda #1
+		sta ballAngle
 
 	return: rts
 
