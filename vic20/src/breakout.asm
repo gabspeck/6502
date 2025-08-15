@@ -186,7 +186,7 @@ UpdateBallState: {
 
 	jsr CheckYCollision
 	jsr UpdateBallX
-	jsr CheckXCollision
+	// jsr CheckXCollision
 	jsr UpdateBallY
 	jsr XYCoordsToScreenPointer
 
@@ -279,14 +279,34 @@ UpdateBallX: {
 		lda ballX
 		sec
 		sbc ballAngle
+		beq bounceRight
+		bmi bounceRight
+		sta ballX
 		jmp return
 	goRight:
 		lda ballX
 		clc
 		adc ballAngle
+		cmp #21
+		bcs bounceLeft
+		sta ballX
+		jmp return
+
+	bounceLeft:
+		lda #21
+		sta ballX
+		jmp bounce
+
+	bounceRight:
+		lda #0
+		sta ballX
+
+	bounce:
+		lda flags
+		eor #FLAG_X_VELOCITY_NEG
+		sta flags
 
 	return: 
-		sta ballX
 		rts
 }
 
