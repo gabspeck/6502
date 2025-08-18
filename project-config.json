@@ -3,7 +3,8 @@
     "description": "Project 6502",
     "toolkit": "kick",
     "sources": [
-        "vic20/src/breakout.asm"
+        "vic20/src/test.asm"
+
     ],
     "build": "debug",
     "definitions": [],

@@ -1,6 +1,5 @@
 // Safe ZP: FB-FE (8 bytes)
 *= $FB virtual
-// .watch screenPointer,screenPointer+1,"store"
 .zp {
 	screenPointer: .word 0 //$FBFC
 	prevScreenPointer: .word 0 //$FDFE
@@ -69,6 +68,7 @@ start:
 
 	jsr DrawBricks
 
+	// random bit
 	lda $9124
 	and #FLAG_X_VELOCITY_NEG
 	sta flags
@@ -184,11 +184,11 @@ UpdateBallState: {
 	lda ballUpdateInterval
 	sta ballUpdateCountdown
 
-	jsr CheckYCollision
+	jsr CheckPaddleCollision
 	jsr UpdateBallX
-	// jsr CheckXCollision
 	jsr UpdateBallY
 	jsr XYCoordsToScreenPointer
+	jsr CheckBrickCollision
 
 	return:
 		rts
@@ -215,7 +215,7 @@ CheckXCollision: {
 
 }
 
-CheckYCollision: {
+CheckPaddleCollision: {
 	lda ballY
 	cmp #0
 	beq invert
@@ -268,6 +268,25 @@ CheckYCollision: {
 		sta flags
 
 	return: rts
+}
+
+CheckBrickCollision: {
+	ldy #0
+	lda (screenPointer),Y
+	cmp #32+128
+	beq clearBrick
+	rts
+	
+	clearBrick:
+		ldy #0 
+		lda #32
+		sta (screenPointer),Y
+		lda #01
+		lda flags 
+		eor #FLAG_Y_VELOCITY_NEG
+		sta flags
+
+	rts
 }
 
 UpdateBallX: {
@@ -325,10 +344,9 @@ UpdateBallY:{
 		inc ballY
 		jmp return
 		wrapAround:
-			lda flags
-			eor #FLAG_Y_VELOCITY_NEG
-			sta flags
-			lda #0
+			lda #11
+			sta ballX
+			lda #11
 			sta ballY
 
 	return: 
@@ -343,6 +361,7 @@ DrawBall: {
 
 	lda #BALL_FILLED
 	sta (screenPointer),Y
+
 
 	rts
 }
